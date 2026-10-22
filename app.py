@@ -210,9 +210,20 @@ def main():
 
     with right:
         st.subheader("SHAP explanation")
-        plt.figure()
-        shap.plots.waterfall(expl, max_display=10, show=False)
-        st.pyplot(plt.gcf(), clear_figure=True)
+        try:
+            plt.figure()
+            shap.plots.waterfall(expl, max_display=10, show=False)
+            st.pyplot(plt.gcf(), clear_figure=True)
+        except IndexError:                                            # shap / matplotlib version clash
+            plt.close("all")
+            top = np.argsort(-np.abs(expl.values))[:10][::-1]
+            fig, ax = plt.subplots(figsize=(7, 4.5))
+            ax.barh([nice(expl.feature_names[i]) for i in top], expl.values[top],
+                    color=["#ff0051" if v > 0 else "#008bfb" for v in expl.values[top]])
+            ax.axvline(0, color="grey", linewidth=0.8)
+            ax.set_xlabel("SHAP value (log-odds)")
+            fig.tight_layout()
+            st.pyplot(fig, clear_figure=True)
         st.caption("Each bar shows how much one feature moved the prediction from the model's average "
                    "output (log-odds). Red pushes towards default, blue towards repayment. "
                    "The numbers on the left are the applicant's values (instalment is calculated "
@@ -227,3 +238,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+ 
